@@ -1,0 +1,155 @@
+{
+  "name": "daily_recommend",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        32,
+        -96
+      ],
+      "id": "dd05c973-5574-4bd9-a163-6b78bb6aad02",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT uid, boj_id FROM members;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        -96
+      ],
+      "id": "ef474248-ce16-4d7b-b15f-180205d340f3",
+      "name": "getMemberList",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://solved.ac/api/v3/user/show?handle={{$json[\"boj_id\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        240,
+        64
+      ],
+      "id": "9757be83-b8c3-4901-a007-6c45a44e593c",
+      "name": "getTier"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nlet sum = 0;\nlet count = inputItems.length;\n\nfor (const item of inputItems) {\n  sum += item.json.tier;\n}\n\nconst avg = Math.floor(sum / count);\n\nreturn [\n  {\n    json: {\n      avgTier: avg\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -96
+      ],
+      "id": "2f796cf2-c727-4514-b51b-30efcb14ea80",
+      "name": "calcAvgTier"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "test",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "836472d2-414d-4813-bcf3-99fe1a89321a",
+      "name": "Discord",
+      "webhookId": "9a6b0446-f23f-4657-8e2e-1861f99ff493",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "JBu0xG6hI0JhMco4",
+          "name": "Discord Webhook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "calcAvgTier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "getTier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getMemberList": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getTier": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calcAvgTier": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "78e5e8ba-0349-43e5-a495-0168a22bc858",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
+  },
+  "id": "D3jWbnJH8w6K7qQA",
+  "tags": []
+}
