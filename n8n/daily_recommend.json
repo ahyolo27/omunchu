@@ -37,21 +37,7 @@
     },
     {
       "parameters": {
-        "url": "=https://solved.ac/api/v3/user/show?handle={{$json[\"boj_id\"]}}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        240,
-        64
-      ],
-      "id": "9757be83-b8c3-4901-a007-6c45a44e593c",
-      "name": "getTier"
-    },
-    {
-      "parameters": {
-        "jsCode": "const inputItems = $input.all();\n\nlet sum = 0;\nlet count = inputItems.length;\n\nfor (const item of inputItems) {\n  sum += item.json.tier;\n}\n\nconst avg = Math.floor(sum / count);\n\nreturn [\n  {\n    json: {\n      avgTier: avg\n    }\n  }\n];"
+        "jsCode": "const inputItems = $input.all();\n\nlet sum = 0;\nlet count = inputItems.length;\n\nfor (const item of inputItems) {\n  sum += item.json.tier;\n}\n\nconst avg = Math.floor(sum / count);\n\nconst max = avg;\nconst min = Math.max(1, avg - 2);\n\nfunction levelToTier(level) {\n    const groups = [\"b\", \"s\", \"g\", \"p\", \"d\", \"r\"];\n\n  const groupIndex = Math.floor((level - 1) / 5);\n  const group = groups[groupIndex];\n\n  const tierNumber = 5 - ((level - 1) % 5);\n\n  return group + tierNumber;\n}\n\nreturn [\n  {\n    json: {\n      maxTier: levelToTier(max),\n      minTier: levelToTier(min)\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -64,25 +50,91 @@
     },
     {
       "parameters": {
-        "authentication": "webhook",
-        "content": "test",
+        "url": "=https://solved.ac/api/v3/user/show?handle={{$json[\"boj_id\"]}}",
         "options": {}
       },
-      "type": "n8n-nodes-base.discord",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
       "position": [
-        416,
+        240,
+        64
+      ],
+      "id": "9757be83-b8c3-4901-a007-6c45a44e593c",
+      "name": "getSolvedacTier"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT problem_id FROM recommendation;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        592,
         -96
       ],
-      "id": "836472d2-414d-4813-bcf3-99fe1a89321a",
-      "name": "Discord",
-      "webhookId": "9a6b0446-f23f-4657-8e2e-1861f99ff493",
+      "id": "ec504c2a-a548-4689-8bcd-4ee588247c0b",
+      "name": "getRecommendation",
       "credentials": {
-        "discordWebhookApi": {
-          "id": "JBu0xG6hI0JhMco4",
-          "name": "Discord Webhook account"
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "url": "https://solved.ac/api/v3/search/problem",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=tier:{{$json.minTier}}..{{$json.maxTier}} solved:1000.."
+            },
+            {
+              "name": "sort",
+              "value": "random"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-solvedac-language",
+              "value": "ko"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        400,
+        -96
+      ],
+      "id": "8beea817-2927-4673-8b7f-6944959d04e8",
+      "name": "searchProblems"
+    },
+    {
+      "parameters": {
+        "jsCode": "const searchNodeItems = $items(\"searchProblems\");\nconst candidates = searchNodeItems[0]?.json?.items ?? [];\n\nconst recommendedItems = $items(\"getRecommendation\");\nconst recommended = new Set(\n  recommendedItems.map(i => i.json.problem_id)\n);\n\n// 중복 제거\nconst filtered = candidates.filter(p =>\n  !recommended.has(p.problemId)\n);\n\nif (filtered.length === 0) {\n  return [];\n}\n\nconst picked = filtered[Math.floor(Math.random() * filtered.length)];\n\nreturn [{ json: picked }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -96
+      ],
+      "id": "0d0f534b-229a-40b0-af40-65ccb4d05c71",
+      "name": "filterProblems"
     }
   ],
   "pinData": {},
@@ -98,7 +150,7 @@
         ],
         [
           {
-            "node": "getTier",
+            "node": "getSolvedacTier",
             "type": "main",
             "index": 0
           }
@@ -116,7 +168,18 @@
         ]
       ]
     },
-    "getTier": {
+    "calcAvgTier": {
+      "main": [
+        [
+          {
+            "node": "searchProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getSolvedacTier": {
       "main": [
         [
           {
@@ -127,11 +190,22 @@
         ]
       ]
     },
-    "calcAvgTier": {
+    "getRecommendation": {
       "main": [
         [
           {
-            "node": "Discord",
+            "node": "filterProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "searchProblems": {
+      "main": [
+        [
+          {
+            "node": "getRecommendation",
             "type": "main",
             "index": 0
           }
@@ -145,7 +219,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "78e5e8ba-0349-43e5-a495-0168a22bc858",
+  "versionId": "159c0d18-f439-4647-9991-8fd4e9598375",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
