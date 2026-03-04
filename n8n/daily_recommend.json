@@ -125,7 +125,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const searchNodeItems = $items(\"searchProblems\");\nconst candidates = searchNodeItems[0]?.json?.items ?? [];\n\nconst recommendedItems = $items(\"getRecommendation\");\nconst recommended = new Set(\n  recommendedItems.map(i => i.json.problem_id)\n);\n\n// 중복 제거\nconst filtered = candidates\n  .filter(p => p.titles?.some(t => t.language === \"ko\"))\n  .filter(p => !recommended.has(p.problemId));\n\nif (filtered.length === 0) {\n  return [];\n}\n\nconst picked = filtered[Math.floor(Math.random() * filtered.length)];\n\nreturn [{ json: picked }];"
+        "jsCode": "const searchNodeItems = $items(\"searchProblems\");\nconst candidates = searchNodeItems[0]?.json?.items ?? [];\n\nconst recommendedItems = $items(\"getRecommendation\");\nconst recommended = new Set(\n  recommendedItems.map(i => i.json.problem_id)\n);\n\nconst attemptCnt = $items(\"setAttemptCnt\")[0].json.attemptCnt;\n\n// 필터링\nconst filtered = candidates\n  .filter(p => p.titles?.some(t => t.language === \"ko\"))\n  .filter(p => !recommended.has(p.problemId));\n\n// 실패\nif (filtered.length === 0) {\n  return [{\n    json: {\n      empty: true,\n      attemptCnt\n    }\n  }];\n}\n\nconst picked = filtered[Math.floor(Math.random() * filtered.length)];\n\n// 성공\nreturn [{\n  json: {\n    ...picked,\n    empty: false,\n    attemptCnt\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -207,11 +207,12 @@
           "conditions": [
             {
               "id": "25512b1b-9063-413a-a9ec-2a1b9b98a53c",
-              "leftValue": "={{ $items().length }}",
+              "leftValue": "={{ $json.empty }}",
               "rightValue": "={{ 0 }}",
               "operator": {
-                "type": "number",
-                "operation": "equals"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             },
             {
@@ -376,7 +377,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "8a56acf3-befa-468d-99ba-51274b989916",
+  "versionId": "bc0a7833-c9d3-4f26-9490-a2010a4c7f95",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
