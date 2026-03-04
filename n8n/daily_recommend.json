@@ -71,7 +71,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        592,
+        768,
         -96
       ],
       "id": "ec504c2a-a548-4689-8bcd-4ee588247c0b",
@@ -91,7 +91,7 @@
           "parameters": [
             {
               "name": "query",
-              "value": "=tier:{{$json.minTier}}..{{$json.maxTier}} solved:1000.."
+              "value": "={{\n(() => {\n  let max = $json.maxTier;\n  let min = $json.minTier;\n  const attemptCnt = $json.attemptCnt;\n\n  let solved;\n\n  if (attemptCnt === 1) {\n    solved = \"1000..\";\n  } else if (attemptCnt === 2) {\n    min = min - 1;\n    solved = \"1000..\";\n  } else {\n    solved = \"500..\";\n  }\n\n  return `tier:${min}..${max} solved:${solved}`;\n})()\n}}"
             },
             {
               "name": "sort",
@@ -117,7 +117,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        400,
+        576,
         -96
       ],
       "id": "8beea817-2927-4673-8b7f-6944959d04e8",
@@ -125,16 +125,118 @@
     },
     {
       "parameters": {
-        "jsCode": "const searchNodeItems = $items(\"searchProblems\");\nconst candidates = searchNodeItems[0]?.json?.items ?? [];\n\nconst recommendedItems = $items(\"getRecommendation\");\nconst recommended = new Set(\n  recommendedItems.map(i => i.json.problem_id)\n);\n\n// 중복 제거\nconst filtered = candidates.filter(p =>\n  !recommended.has(p.problemId)\n);\n\nif (filtered.length === 0) {\n  return [];\n}\n\nconst picked = filtered[Math.floor(Math.random() * filtered.length)];\n\nreturn [{ json: picked }];"
+        "jsCode": "const searchNodeItems = $items(\"searchProblems\");\nconst candidates = searchNodeItems[0]?.json?.items ?? [];\n\nconst recommendedItems = $items(\"getRecommendation\");\nconst recommended = new Set(\n  recommendedItems.map(i => i.json.problem_id)\n);\n\n// 중복 제거\nconst filtered = candidates\n  .filter(p => p.titles?.some(t => t.language === \"ko\"))\n  .filter(p => !recommended.has(p.problemId));\n\nif (filtered.length === 0) {\n  return [];\n}\n\nconst picked = filtered[Math.floor(Math.random() * filtered.length)];\n\nreturn [{ json: picked }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        784,
+        960,
         -96
       ],
       "id": "0d0f534b-229a-40b0-af40-65ccb4d05c71",
       "name": "filterProblems"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        -96
+      ],
+      "id": "c8022bf3-ddea-4149-bd3b-651282394499",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c3d08ccb-7031-4efa-b9af-e3f21cfdcd45",
+              "name": "attemptCnt",
+              "value": 1,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        -96
+      ],
+      "id": "c358e5b5-34a9-438c-9e1e-7cad186d1ea2",
+      "name": "setAttemptCnt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f15a04f0-0bed-420b-a240-661f746de7a8",
+              "name": "attemptCnt",
+              "value": "={{ $json.attemptCnt + 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        128
+      ],
+      "id": "0c37734e-a0da-4ee7-82d8-e2e45b949bcd",
+      "name": "increaseAttemptCnt"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "25512b1b-9063-413a-a9ec-2a1b9b98a53c",
+              "leftValue": "={{ $items().length }}",
+              "rightValue": "={{ 0 }}",
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "54915c1a-de35-4351-831d-50deb0a8d45b",
+              "leftValue": "={{ $json.attemptCnt }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        -96
+      ],
+      "id": "f851153a-56fa-4d92-a8f0-51d95a1b93a3",
+      "name": "ifResultIsEmpty"
     }
   ],
   "pinData": {},
@@ -172,7 +274,7 @@
       "main": [
         [
           {
-            "node": "searchProblems",
+            "node": "setAttemptCnt",
             "type": "main",
             "index": 0
           }
@@ -211,6 +313,61 @@
           }
         ]
       ]
+    },
+    "filterProblems": {
+      "main": [
+        [
+          {
+            "node": "ifResultIsEmpty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "getMemberList",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setAttemptCnt": {
+      "main": [
+        [
+          {
+            "node": "searchProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "increaseAttemptCnt": {
+      "main": [
+        [
+          {
+            "node": "searchProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ifResultIsEmpty": {
+      "main": [
+        [
+          {
+            "node": "increaseAttemptCnt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -219,7 +376,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "159c0d18-f439-4647-9991-8fd4e9598375",
+  "versionId": "8a56acf3-befa-468d-99ba-51274b989916",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
