@@ -137,17 +137,6 @@
       "name": "filterProblems"
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -416,
-        -96
-      ],
-      "id": "c8022bf3-ddea-4149-bd3b-651282394499",
-      "name": "When clicking ‘Execute workflow’"
-    },
-    {
       "parameters": {
         "assignments": {
           "assignments": [
@@ -238,6 +227,45 @@
       ],
       "id": "f851153a-56fa-4d92-a8f0-51d95a1b93a3",
       "name": "ifResultIsEmpty"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO recommendation (problem_id, name, tag, created_at)\nVALUES (\n  {{ $json.problemId }},\n  '{{ $json.titleKo.replace(\"'\", \" \") }}',\n  '{{ \n    JSON.stringify(\n      $json.tags\n        .map(t => t.displayNames.find(d => d.language === \"ko\")?.name)\n        .filter(Boolean)\n    )\n  }}',\n  now()\n)\nON CONFLICT (problem_id) DO NOTHING;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1376,
+        0
+      ],
+      "id": "d76fa303-2616-4a03-8fad-dc44476df5e9",
+      "name": "insertProblem",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"**{{$now.toFormat('MMdd')}}**\\n[{{$node['filterProblems'].json.problemId}}: {{$node['filterProblems'].json.titleKo}}](https://www.acmicpc.net/problem/{{$node['filterProblems'].json.problemId}})\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1584,
+        0
+      ],
+      "id": "5b0b9695-1a20-4ed3-ad16-6d86f6d29dd3",
+      "name": "discordWebhook"
     }
   ],
   "pinData": {},
@@ -326,17 +354,6 @@
         ]
       ]
     },
-    "When clicking ‘Execute workflow’": {
-      "main": [
-        [
-          {
-            "node": "getMemberList",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "setAttemptCnt": {
       "main": [
         [
@@ -367,6 +384,24 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "insertProblem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insertProblem": {
+      "main": [
+        [
+          {
+            "node": "discordWebhook",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
@@ -377,7 +412,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "bc0a7833-c9d3-4f26-9490-a2010a4c7f95",
+  "versionId": "d07f0b8d-d41b-405c-9808-2060e698f210",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
