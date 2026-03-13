@@ -1,17 +1,6 @@
 {
-  "name": "problem_reminder",
+  "name": "daily_reminder",
   "nodes": [
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -80,
-        64
-      ],
-      "id": "ef75f321-71bd-4c51-b7f4-de8c565bd0f3",
-      "name": "When clicking ‘Execute workflow’"
-    },
     {
       "parameters": {
         "operation": "executeQuery",
@@ -151,6 +140,30 @@
     },
     {
       "parameters": {
+        "jsCode": "const ids = $items(\"getUnsolvedMembers\").map(i => `<@${i.json.discord_id}>`).join(' ');\n\nreturn [{\n  json: {\n    mentions: ids,\n    problem_id: $items(\"getProblem\")[0].json.problem_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        64
+      ],
+      "id": "684a54b2-556d-4210-8d10-e1c0c9c59865",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        64
+      ],
+      "id": "ef75f321-71bd-4c51-b7f4-de8c565bd0f3",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "sendBody": true,
@@ -171,40 +184,11 @@
         64
       ],
       "id": "52971265-2abe-47e9-be86-440dea97ae60",
-      "name": "HTTP Request"
-    },
-    {
-      "parameters": {
-        "jsCode": "const ids = $items(\"getUnsolvedMembers\").map(i => `<@${i.json.discord_id}>`).join(' ');\n\nreturn [{\n  json: {\n    mentions: ids,\n    problem_id: $items(\"getProblem\")[0].json.problem_id\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1024,
-        64
-      ],
-      "id": "684a54b2-556d-4210-8d10-e1c0c9c59865",
-      "name": "Code in JavaScript"
+      "name": "discordWebhook"
     }
   ],
   "pinData": {},
   "connections": {
-    "When clicking ‘Execute workflow’": {
-      "main": [
-        [
-          {
-            "node": "getProblem",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "getMembers",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "getProblem": {
       "main": [
         [
@@ -293,7 +277,23 @@
       "main": [
         [
           {
-            "node": "HTTP Request",
+            "node": "discordWebhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "getMembers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "getProblem",
             "type": "main",
             "index": 0
           }
@@ -307,7 +307,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "e5b59a97-53e4-4faa-885f-0e491e07757f",
+  "versionId": "c6812a0b-73ee-4770-94c3-dd3859df2979",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
