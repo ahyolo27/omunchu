@@ -25,7 +25,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT uid as mid, boj_id\nFROM members;",
+        "query": "SELECT uid as mid, boj_id\nFROM members\nWHERE is_active = true;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -119,7 +119,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT m.discord_id\nFROM member_recommendation mr\nJOIN members m \n    ON mr.member_uid = m.uid\nWHERE mr.is_solved = false\n  AND checked_at::date = CURRENT_DATE;",
+        "query": "SELECT m.discord_id\nFROM member_recommendation mr\nJOIN members m \n    ON mr.member_uid = m.uid\nWHERE mr.is_solved = false\n  AND m.is_active = true\n  AND checked_at::date = CURRENT_DATE;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -323,7 +323,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4530ffae-3fa7-4a28-8f47-4ff680aa6912",
+  "versionId": "80b5e99e-3a25-4148-8d12-7fd5d908f694",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
