@@ -17,7 +17,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT uid, boj_id FROM members;",
+        "query": "SELECT uid, boj_id\nFROM members\nWHERE is_active = true;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -450,7 +450,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "a27c2e73-745f-4699-a2cd-b33f67d4588e",
+  "versionId": "50d9ffc4-19d9-48a6-9754-56e44f72438d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"

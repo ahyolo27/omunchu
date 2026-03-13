@@ -25,7 +25,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT uid as mid, boj_id\nFROM members;",
+        "query": "SELECT uid as mid, boj_id\nFROM members\nWHERE is_active = true;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -119,7 +119,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT m.discord_id\nFROM member_recommendation mr\nJOIN members m \n    ON mr.member_uid = m.uid\nWHERE mr.is_solved = false\n  AND checked_at::date = CURRENT_DATE;",
+        "query": "SELECT m.discord_id\nFROM member_recommendation mr\nJOIN members m \n    ON mr.member_uid = m.uid\nWHERE mr.is_solved = false\n  AND m.is_active = true\n  AND checked_at::date = CURRENT_DATE;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -140,19 +140,6 @@
     },
     {
       "parameters": {
-        "jsCode": "const ids = $items(\"getUnsolvedMembers\").map(i => `<@${i.json.discord_id}>`).join(' ');\n\nreturn [{\n  json: {\n    mentions: ids,\n    problem_id: $items(\"getProblem\")[0].json.problem_id\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1024,
-        64
-      ],
-      "id": "684a54b2-556d-4210-8d10-e1c0c9c59865",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
         "method": "POST",
         "url": "={{ $env.DISCORD_WEBHOOK_REMINDER_URL }}",
         "sendBody": true,
@@ -160,7 +147,7 @@
           "parameters": [
             {
               "name": "content",
-              "value": "=🚨 아직 안 푼 사람: {{$json[\"mentions\"]}}\n\n👉️👉️👉️ [문제 바로 풀기](https://www.acmicpc.net/problem/{{$json[\"problem_id\"]}})"
+              "value": "=🚨 아직 안 푼 사람: {{$json[\"mentions\"]}}\n\n👉️👉️👉️ [오문추 바로가기](https://www.acmicpc.net/problem/{{$json[\"problem_id\"]}})"
             }
           ]
         },
@@ -169,7 +156,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1248,
+        1392,
         64
       ],
       "id": "52971265-2abe-47e9-be86-440dea97ae60",
@@ -201,6 +188,53 @@
       ],
       "id": "c875920f-2472-4472-b44b-6b9058ab85ad",
       "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "1670a1b8-f528-4f9d-9bbe-278217069533",
+              "leftValue": "={{ $json.mentions }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1216,
+        64
+      ],
+      "id": "e2ea7e87-7e1b-4cd5-991b-b9d3415e13fb",
+      "name": "IfUnsolvedIsNotEmpty"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ids = $items(\"getUnsolvedMembers\").map(i => `<@${i.json.discord_id}>`).join(' ');\n\nreturn [{\n  json: {\n    mentions: ids,\n    problem_id: $items(\"getProblem\")[0].json.problem_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        64
+      ],
+      "id": "684a54b2-556d-4210-8d10-e1c0c9c59865",
+      "name": "makeMentionsContent"
     }
   ],
   "pinData": {},
@@ -282,18 +316,7 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "discordWebhook",
+            "node": "makeMentionsContent",
             "type": "main",
             "index": 0
           }
@@ -315,6 +338,28 @@
           }
         ]
       ]
+    },
+    "IfUnsolvedIsNotEmpty": {
+      "main": [
+        [
+          {
+            "node": "discordWebhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "makeMentionsContent": {
+      "main": [
+        [
+          {
+            "node": "IfUnsolvedIsNotEmpty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -323,7 +368,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4530ffae-3fa7-4a28-8f47-4ff680aa6912",
+  "versionId": "79468dff-4135-44f8-8b80-82d655ca57d3",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
