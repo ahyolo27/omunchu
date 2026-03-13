@@ -152,17 +152,6 @@
       "name": "Code in JavaScript"
     },
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        -80,
-        64
-      ],
-      "id": "ef75f321-71bd-4c51-b7f4-de8c565bd0f3",
-      "name": "When clicking ‘Execute workflow’"
-    },
-    {
       "parameters": {
         "method": "POST",
         "url": "={{ $env.DISCORD_WEBHOOK_REMINDER_URL }}",
@@ -185,6 +174,33 @@
       ],
       "id": "52971265-2abe-47e9-be86-440dea97ae60",
       "name": "discordWebhook"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "triggerAtHour": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        64
+      ],
+      "id": "c875920f-2472-4472-b44b-6b9058ab85ad",
+      "name": "Schedule Trigger"
     }
   ],
   "pinData": {},
@@ -284,16 +300,16 @@
         ]
       ]
     },
-    "When clicking ‘Execute workflow’": {
+    "Schedule Trigger": {
       "main": [
         [
           {
-            "node": "getMembers",
+            "node": "getProblem",
             "type": "main",
             "index": 0
           },
           {
-            "node": "getProblem",
+            "node": "getMembers",
             "type": "main",
             "index": 0
           }
@@ -307,7 +323,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "bf6a9eac-3300-4073-b85e-19d39f71e91c",
+  "versionId": "4530ffae-3fa7-4a28-8f47-4ff680aa6912",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
