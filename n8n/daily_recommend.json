@@ -255,7 +255,7 @@
         "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"content\": \"**{{$now.toFormat('MMdd')}}**\\n[{{$node['filterProblems'].json.problemId}}: {{$node['filterProblems'].json.titleKo}}](https://www.acmicpc.net/problem/{{$node['filterProblems'].json.problemId}})\"\n}",
+        "jsonBody": "={\n  \"embeds\": [\n    {\n      \"title\": \"💡 {{$now.toFormat('MMdd')}}\",\n      \"description\": \"**[{{$node['filterProblems'].json.problemId}}: {{$node['filterProblems'].json.titleKo}}](https://www.acmicpc.net/problem/{{$node['filterProblems'].json.problemId}})**\",\n      \"color\": 3447003\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -450,7 +450,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "b6688a90-de2d-4346-b9cc-f5f415ae3ccf",
+  "versionId": "32b2559b-d0d4-4adc-bb1f-563ad2308bb9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
