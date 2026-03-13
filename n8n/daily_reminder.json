@@ -1,0 +1,333 @@
+{
+  "name": "daily_reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT uid as rid, problem_id, name\nFROM recommendation\nWHERE created_at::date = CURRENT_DATE\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "016afc3d-20bb-46a5-b5fb-63374017a1e5",
+      "name": "getProblem",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT uid as mid, boj_id\nFROM members;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        144
+      ],
+      "id": "564a43c0-52d7-496f-bfbd-33563eb31b07",
+      "name": "getMembers",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        432,
+        64
+      ],
+      "id": "1c6e04f6-7c8c-49aa-96c2-ee5c2cb4d1f8",
+      "name": "Merge",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "https://solved.ac/api/v3/search/problem",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{`solved_by:${$json[\"boj_id\"]} id:${$json[\"problem_id\"]}`}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        816,
+        272
+      ],
+      "id": "78b4fcb8-6c34-4d3d-90e4-46a467b4faf9",
+      "name": "checkSolved"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        624,
+        64
+      ],
+      "id": "dfef7f73-909f-4249-a250-43d2fbef97fd",
+      "name": "Loop"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO member_recommendation (recommendation_uid, member_uid, is_solved)\nVALUES ({{ $('Loop').item.json.rid }}, {{ $('Loop').item.json.mid }}, {{ $json.count == 0 ? false : true }});",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        272
+      ],
+      "id": "8c3f1a34-5ff1-4ba4-93c8-a2de090d05ee",
+      "name": "insertHistory",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT m.discord_id\nFROM member_recommendation mr\nJOIN members m \n    ON mr.member_uid = m.uid\nWHERE mr.is_solved = false\n  AND checked_at::date = CURRENT_DATE;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        816,
+        64
+      ],
+      "id": "23d8c68b-d477-471b-9404-5843a1493d92",
+      "name": "getUnsolvedMembers",
+      "executeOnce": true,
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ids = $items(\"getUnsolvedMembers\").map(i => `<@${i.json.discord_id}>`).join(' ');\n\nreturn [{\n  json: {\n    mentions: ids,\n    problem_id: $items(\"getProblem\")[0].json.problem_id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        64
+      ],
+      "id": "684a54b2-556d-4210-8d10-e1c0c9c59865",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_REMINDER_URL }}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "=🚨 아직 안 푼 사람: {{$json[\"mentions\"]}}\n\n👉️👉️👉️ [문제 바로 풀기](https://www.acmicpc.net/problem/{{$json[\"problem_id\"]}})"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1248,
+        64
+      ],
+      "id": "52971265-2abe-47e9-be86-440dea97ae60",
+      "name": "discordWebhook"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "triggerAtHour": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -32,
+        64
+      ],
+      "id": "c875920f-2472-4472-b44b-6b9058ab85ad",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "getProblem": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getMembers": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "checkSolved": {
+      "main": [
+        [
+          {
+            "node": "insertHistory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop": {
+      "main": [
+        [
+          {
+            "node": "getUnsolvedMembers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "checkSolved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insertHistory": {
+      "main": [
+        [
+          {
+            "node": "Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getUnsolvedMembers": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "discordWebhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "getProblem",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "getMembers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4530ffae-3fa7-4a28-8f47-4ff680aa6912",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
+  },
+  "id": "AzeiPbv60xFazwSb",
+  "tags": []
+}

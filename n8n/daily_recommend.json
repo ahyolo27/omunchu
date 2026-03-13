@@ -252,7 +252,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "url": "={{ $env.DISCORD_WEBHOOK_RECOMMENDATION_URL }}",
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"embeds\": [\n    {\n      \"title\": \"💡 {{$now.toFormat('MMdd')}}\",\n      \"description\": \"**[{{$node['filterProblems'].json.problemId}}: {{$node['filterProblems'].json.titleKo}}](https://www.acmicpc.net/problem/{{$node['filterProblems'].json.problemId}})**\",\n      \"color\": 3447003\n    }\n  ]\n}",
@@ -450,7 +450,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "32b2559b-d0d4-4adc-bb1f-563ad2308bb9",
+  "versionId": "a27c2e73-745f-4699-a2cd-b33f67d4588e",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
