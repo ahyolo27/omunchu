@@ -165,7 +165,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "={{ $env.DISCORD_WEBHOOK_URL }}",
+        "url": "={{ $env.DISCORD_WEBHOOK_REMINDER_URL }}",
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -307,7 +307,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "c6812a0b-73ee-4770-94c3-dd3859df2979",
+  "versionId": "bf6a9eac-3300-4073-b85e-19d39f71e91c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
