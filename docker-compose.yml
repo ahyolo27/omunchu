@@ -39,6 +39,7 @@ services:
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
 #      N8N_LOG_LEVEL: warn
       TZ: Asia/Seoul
+      GENERIC_TIMEZONE: Asia/Seoul
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:
