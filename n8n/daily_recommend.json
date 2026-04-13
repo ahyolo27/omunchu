@@ -1,0 +1,460 @@
+{
+  "name": "daily_recommend",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        32,
+        -96
+      ],
+      "id": "dd05c973-5574-4bd9-a163-6b78bb6aad02",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT uid, boj_id\nFROM members\nWHERE is_active = true;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -192,
+        -96
+      ],
+      "id": "ef474248-ce16-4d7b-b15f-180205d340f3",
+      "name": "getMemberList",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItems = $input.all();\n\nlet sum = 0;\nlet count = inputItems.length;\n\nfor (const item of inputItems) {\n  sum += item.json.tier;\n}\n\nconst avg = Math.floor(sum / count);\n\nconst max = avg;\nconst min = Math.max(1, avg - 2);\n\nfunction levelToTier(level) {\n    const groups = [\"b\", \"s\", \"g\", \"p\", \"d\", \"r\"];\n\n  const groupIndex = Math.floor((level - 1) / 5);\n  const group = groups[groupIndex];\n\n  const tierNumber = 5 - ((level - 1) % 5);\n\n  return group + tierNumber;\n}\n\nreturn [\n  {\n    json: {\n      maxTier: levelToTier(max),\n      minTier: levelToTier(min)\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -96
+      ],
+      "id": "2f796cf2-c727-4514-b51b-30efcb14ea80",
+      "name": "calcAvgTier"
+    },
+    {
+      "parameters": {
+        "url": "=https://solved.ac/api/v3/user/show?handle={{$json[\"boj_id\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        240,
+        64
+      ],
+      "id": "9757be83-b8c3-4901-a007-6c45a44e593c",
+      "name": "getSolvedacTier"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT problem_id FROM recommendation;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        768,
+        -96
+      ],
+      "id": "ec504c2a-a548-4689-8bcd-4ee588247c0b",
+      "name": "getRecommendation",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://solved.ac/api/v3/search/problem",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{\n(() => {\n  let max = $json.maxTier;\n  let min = $json.minTier;\n  const attemptCnt = $json.attemptCnt;\n\n  let solved;\n\n  if (attemptCnt === 1) {\n    solved = \"1000..\";\n  } else if (attemptCnt === 2) {\n    min = min - 1;\n    solved = \"1000..\";\n  } else {\n    solved = \"500..\";\n  }\n\n  return `tier:${min}..${max} solved:${solved}`;\n})()\n}}"
+            },
+            {
+              "name": "sort",
+              "value": "random"
+            },
+            {
+              "name": "page",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-solvedac-language",
+              "value": "ko"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        -96
+      ],
+      "id": "8beea817-2927-4673-8b7f-6944959d04e8",
+      "name": "searchProblems"
+    },
+    {
+      "parameters": {
+        "jsCode": "const searchNodeItems = $items(\"searchProblems\");\nconst candidates = searchNodeItems[0]?.json?.items ?? [];\n\nconst recommendedItems = $items(\"getRecommendation\");\nconst recommended = new Set(\n  recommendedItems.map(i => i.json.problem_id)\n);\n\nconst attemptCnt = $items(\"setAttemptCnt\")[0].json.attemptCnt;\n\n// 필터링\nconst filtered = candidates\n  .filter(p => p.titles?.some(t => t.language === \"ko\"))\n  .filter(p => !recommended.has(p.problemId));\n\n// 실패\nif (filtered.length === 0) {\n  return [{\n    json: {\n      empty: true,\n      attemptCnt\n    }\n  }];\n}\n\nconst picked = filtered[Math.floor(Math.random() * filtered.length)];\n\n// 성공\nreturn [{\n  json: {\n    ...picked,\n    empty: false,\n    attemptCnt\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        -96
+      ],
+      "id": "0d0f534b-229a-40b0-af40-65ccb4d05c71",
+      "name": "filterProblems"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c3d08ccb-7031-4efa-b9af-e3f21cfdcd45",
+              "name": "attemptCnt",
+              "value": 1,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        -96
+      ],
+      "id": "c358e5b5-34a9-438c-9e1e-7cad186d1ea2",
+      "name": "setAttemptCnt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f15a04f0-0bed-420b-a240-661f746de7a8",
+              "name": "attemptCnt",
+              "value": "={{ $json.attemptCnt + 1 }}",
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        128
+      ],
+      "id": "0c37734e-a0da-4ee7-82d8-e2e45b949bcd",
+      "name": "increaseAttemptCnt"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "25512b1b-9063-413a-a9ec-2a1b9b98a53c",
+              "leftValue": "={{ $json.empty }}",
+              "rightValue": "={{ 0 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "54915c1a-de35-4351-831d-50deb0a8d45b",
+              "leftValue": "={{ $json.attemptCnt }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": "={{ false }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1168,
+        -96
+      ],
+      "id": "f851153a-56fa-4d92-a8f0-51d95a1b93a3",
+      "name": "ifResultIsEmpty"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO recommendation (problem_id, name, tag, created_at)\nVALUES (\n  {{ $json.problemId }},\n  '{{ $json.titleKo.replace(\"'\", \" \") }}',\n  '{{ \n    JSON.stringify(\n      $json.tags\n        .map(t => t.displayNames.find(d => d.language === \"ko\")?.name)\n        .filter(Boolean)\n    )\n  }}',\n  now()\n)\nON CONFLICT (problem_id) DO NOTHING;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1376,
+        -96
+      ],
+      "id": "d76fa303-2616-4a03-8fad-dc44476df5e9",
+      "name": "insertProblem",
+      "credentials": {
+        "postgres": {
+          "id": "Bo8GVupPeCn3MpIl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.DISCORD_WEBHOOK_RECOMMENDATION_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"embeds\": [\n    {\n      \"title\": \"💡 {{$now.toFormat('MMdd')}}\",\n      \"description\": \"**[{{$node['filterProblems'].json.problemId}}: {{$node['filterProblems'].json.titleKo}}](https://www.acmicpc.net/problem/{{$node['filterProblems'].json.problemId}})**\",\n      \"color\": 3447003\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1536,
+        -96
+      ],
+      "id": "5b0b9695-1a20-4ed3-ad16-6d86f6d29dd3",
+      "name": "discordWebhook"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        -96
+      ],
+      "id": "77168734-3146-4c2f-af9e-d4aa992cacd3",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "calcAvgTier",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "getSolvedacTier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getMemberList": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "calcAvgTier": {
+      "main": [
+        [
+          {
+            "node": "setAttemptCnt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getSolvedacTier": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getRecommendation": {
+      "main": [
+        [
+          {
+            "node": "filterProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "searchProblems": {
+      "main": [
+        [
+          {
+            "node": "getRecommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filterProblems": {
+      "main": [
+        [
+          {
+            "node": "ifResultIsEmpty",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "setAttemptCnt": {
+      "main": [
+        [
+          {
+            "node": "searchProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "increaseAttemptCnt": {
+      "main": [
+        [
+          {
+            "node": "searchProblems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ifResultIsEmpty": {
+      "main": [
+        [
+          {
+            "node": "increaseAttemptCnt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "insertProblem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "insertProblem": {
+      "main": [
+        [
+          {
+            "node": "discordWebhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "getMemberList",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "50d9ffc4-19d9-48a6-9754-56e44f72438d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
+  },
+  "id": "D3jWbnJH8w6K7qQA",
+  "tags": []
+}
