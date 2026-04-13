@@ -51,6 +51,9 @@
     {
       "parameters": {
         "url": "=https://solved.ac/api/v3/user/show?handle={{$json[\"boj_id\"]}}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"PostmanRuntime/7.32.3\",\n  \"Accept\": \"application/json\",\n  \"Accept-Language\": \"ko-KR,ko;q=0.9\",\n  \"Connection\": \"keep-alive\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -104,14 +107,8 @@
           ]
         },
         "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "x-solvedac-language",
-              "value": "ko"
-            }
-          ]
-        },
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"PostmanRuntime/7.32.3\",\n  \"Accept\": \"application/json\",\n  \"Accept-Language\": \"ko-KR,ko;q=0.9\",\n  \"Connection\": \"keep-alive\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -450,7 +447,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "50d9ffc4-19d9-48a6-9754-56e44f72438d",
+  "versionId": "746cc48c-68e3-4104-8d49-0d4205b48bce",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
