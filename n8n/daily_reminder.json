@@ -10,10 +10,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        208,
-        0
+        -176,
+        -160
       ],
-      "id": "016afc3d-20bb-46a5-b5fb-63374017a1e5",
+      "id": "8669479a-7790-4117-b1f1-afd656b3266f",
       "name": "getProblem",
       "credentials": {
         "postgres": {
@@ -31,10 +31,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        208,
-        144
+        -176,
+        -16
       ],
-      "id": "564a43c0-52d7-496f-bfbd-33563eb31b07",
+      "id": "caaef86a-6d06-4484-9932-9709479d384f",
       "name": "getMembers",
       "credentials": {
         "postgres": {
@@ -52,10 +52,10 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.2,
       "position": [
-        432,
-        64
+        48,
+        -96
       ],
-      "id": "1c6e04f6-7c8c-49aa-96c2-ee5c2cb4d1f8",
+      "id": "e193dee6-d83c-4486-b732-b63f083cd605",
       "name": "Merge",
       "alwaysOutputData": false
     },
@@ -71,15 +71,18 @@
             }
           ]
         },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"User-Agent\": \"PostmanRuntime/7.32.3\",\n  \"Accept\": \"application/json\",\n  \"Accept-Language\": \"ko-KR,ko;q=0.9\",\n  \"Connection\": \"keep-alive\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        816,
-        272
+        432,
+        112
       ],
-      "id": "78b4fcb8-6c34-4d3d-90e4-46a467b4faf9",
+      "id": "bbb72606-9faf-4886-b544-3c81f6f5f326",
       "name": "checkSolved"
     },
     {
@@ -89,10 +92,10 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        624,
-        64
+        240,
+        -96
       ],
-      "id": "dfef7f73-909f-4249-a250-43d2fbef97fd",
+      "id": "ffa7c051-468d-45cd-bcea-9ca30aef0350",
       "name": "Loop"
     },
     {
@@ -104,10 +107,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1024,
-        272
+        640,
+        112
       ],
-      "id": "8c3f1a34-5ff1-4ba4-93c8-a2de090d05ee",
+      "id": "6e69b0af-a666-4333-a20e-bfaaef857191",
       "name": "insertHistory",
       "credentials": {
         "postgres": {
@@ -125,10 +128,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        816,
-        64
+        432,
+        -96
       ],
-      "id": "23d8c68b-d477-471b-9404-5843a1493d92",
+      "id": "d191cbb6-d59d-4cf1-a463-a66ab0bd3daa",
       "name": "getUnsolvedMembers",
       "executeOnce": true,
       "credentials": {
@@ -156,10 +159,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        1392,
-        64
+        1008,
+        -96
       ],
-      "id": "52971265-2abe-47e9-be86-440dea97ae60",
+      "id": "62c5cffe-e566-4e67-b7ff-ffc1d12b3f00",
       "name": "discordWebhook"
     },
     {
@@ -183,10 +186,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.3,
       "position": [
-        -32,
-        64
+        -416,
+        -96
       ],
-      "id": "c875920f-2472-4472-b44b-6b9058ab85ad",
+      "id": "c15124b0-526f-488c-8489-a726c076382f",
       "name": "Schedule Trigger"
     },
     {
@@ -217,10 +220,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1216,
-        64
+        832,
+        -96
       ],
-      "id": "e2ea7e87-7e1b-4cd5-991b-b9d3415e13fb",
+      "id": "e373d20f-d182-423b-b98f-748a31d1b36d",
       "name": "IfUnsolvedIsNotEmpty"
     },
     {
@@ -230,10 +233,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1008,
-        64
+        624,
+        -96
       ],
-      "id": "684a54b2-556d-4210-8d10-e1c0c9c59865",
+      "id": "f08cd02a-630f-47cd-a431-14d6c40e95bb",
       "name": "makeMentionsContent"
     }
   ],
@@ -368,7 +371,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "79468dff-4135-44f8-8b80-82d655ca57d3",
+  "versionId": "4200e8c8-b5c2-4662-8fdc-1357d931b7f9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "565bd8a2eda104ea3687b88c2f93b320ff266a023a2a4f9800d77593ae107a4a"
