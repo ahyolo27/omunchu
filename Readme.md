@@ -6,6 +6,8 @@
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white">
   <img src="https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white">
   </p>
+  <p>Latest: v1.1 | <a href="#-릴리즈-노트">릴리즈 노트</a></p>
+  <p></p>
 </div>
 
 ---
@@ -28,9 +30,9 @@ omunchu는 **BOJ(백준) 문제를 자동으로 추천해주는 서비스**입�
 
 ### 2. 🎲 랜덤 추천 및 조건 필터링
 - 조건:
-    - 정답자 수 ≥ 1000
-    - 한국어 문제
-    - 추천 기록이 없는 문제
+  - 정답자 수 ≥ 1000
+  - 한국어 문제
+  - 추천 기록이 없는 문제
 - 조건에 맞는 문제가 없을 경우 조건 완화 후 재시도
 
 ### 3. 🔔 Discord 알림
@@ -79,3 +81,15 @@ N8N_ENCRYPTION_KEY=
 DISCORD_WEBHOOK_RECOMMENDATION_URL=
 DISCORD_WEBHOOK_REMINDER_URL=
 ```
+
+---
+
+## 📦 릴리즈 노트
+### v1.1
+- 인증 쿠키 설정 문제 수정 (secure 옵션 조정)
+- solved.ac API 요청 안정정 개선
+
+### v1.0
+- 문제 추천 자동화 워크플로우 구축
+- 디스코드 알림 기능 구현
+- PostgreSQL 기반 데이터 구조 설계
